@@ -12,7 +12,7 @@ PuppyGit made by Bandeapart1964 of catpuppyapp
 
 ### Star + <a href=https://github.com/catpuppyapp/PuppyGit/blob/main/donate.md>Donate</a>, it will help me continuously maintenance this app!
 ### I appreciate every donator and user, especially donators! You give me faith! 
-### I hope have a day I can got 1M users and many donators! XD ~~(2 years over, I knew it NEVER become true)~~
+### I hope have a day I can got 1M users and many donators! XD ~~(2 years over, I knew it would never become true)~~
 
 
 
