@@ -1,0 +1,2 @@
+- support create bare repo
+- support rename remotes (issue #136)

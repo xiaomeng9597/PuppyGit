@@ -2,6 +2,16 @@
 
 
 ---
+1.1.5.0v126 - 20260502:
+- support create bare repo
+- support rename remotes (issue #136)
+
+
+
+- 支持创建bare仓库
+- 支持重命名远程仓库 (issue #136)
+
+---
 1.1.4.9v125 - 20260401:
 - support call http api in sync way
 - support auto dismiss automation service notification (pr #132, thx @jiesou)

@@ -13,12 +13,13 @@ import com.catpuppyapp.puppygit.screen.content.homescreen.innerpage.donateLink
 import com.catpuppyapp.puppygit.utils.ActivityUtil
 import com.catpuppyapp.puppygit.utils.AppModel
 
+private const val hahaNoteLink = "https://github.com/catpuppyapp/HahaNote-Release"
 
 private val changelog = """
-- support call http api in sync way
-- support auto dismiss automation service notification (pr #132, thx @jiesou)
-- 支持以同步方式调用http api
-- 支持自动忽略自动化服务的通知消息 (pr #132, thx @jiesou)
+- support create bare repo
+- support rename remotes (issue #136)
+- 支持创建bare仓库
+- 支持重命名远程仓库 (issue #136)
 """.trimIndent()
 
 
@@ -46,6 +47,12 @@ fun ChangelogDialog(
             ScrollableColumn {
                 MultiLineClickableText(donateText) {
                     ActivityUtil.openUrl(activityContext, donateLink)
+                }
+
+                Spacer(Modifier.height(15.dp))
+
+                MultiLineClickableText("Try my new app: Haha Note, an e2ee note sync app") {
+                    ActivityUtil.openUrl(activityContext, hahaNoteLink)
                 }
 
                 Spacer(Modifier.height(15.dp))
