@@ -45,7 +45,9 @@ import com.catpuppyapp.puppygit.compose.BottomSheet
 import com.catpuppyapp.puppygit.compose.BottomSheetItem
 import com.catpuppyapp.puppygit.compose.CenterPaddingRow
 import com.catpuppyapp.puppygit.compose.ConfirmDialog
+import com.catpuppyapp.puppygit.compose.ConfirmDialog2
 import com.catpuppyapp.puppygit.compose.CopyableDialog
+import com.catpuppyapp.puppygit.compose.CopyableDialog2
 import com.catpuppyapp.puppygit.compose.CreateRemoteDialog
 import com.catpuppyapp.puppygit.compose.FetchRemotesDialog
 import com.catpuppyapp.puppygit.compose.FilterTextField
@@ -119,6 +121,7 @@ fun RemoteListScreen(
 //    val list = MockData.getErrorList(repoId,1,100);
     val list = mutableCustomStateListOf(keyTag = stateKeyTag, keyName = "list", initValue = listOf<RemoteDto>())
     val filterList = mutableCustomStateListOf(keyTag = stateKeyTag, keyName = "filterList", initValue = listOf<RemoteDto>())
+    val clipboardManager = LocalClipboardManager.current
 
 //
 //    SideEffect {
@@ -186,7 +189,94 @@ fun RemoteListScreen(
         )
     }
 
-    val showDelRemoteDialog = rememberSaveable { mutableStateOf(false)}
+
+    val renameFailedRefs = rememberSaveable { mutableStateOf("") }
+    val showRenameFailedRefsDialog = rememberSaveable { mutableStateOf(false) }
+    if(showRenameFailedRefsDialog.value) {
+        CopyableDialog2(
+            title = stringResource(R.string.error),
+            text = renameFailedRefs.value,
+            onCancel = { showRenameFailedRefsDialog.value = false }
+        ) {
+            showRenameFailedRefsDialog.value = false
+
+            val renameFailedRefsStr = renameFailedRefs.value
+            renameFailedRefs.value = ""
+            val renameFailedRefs = Unit  // avoid mistake use
+            clipboardManager.setText(AnnotatedString(renameFailedRefsStr))
+            Msg.requireShow(activityContext.getString(R.string.copied))
+        }
+    }
+
+    val showRenameDialog = rememberSaveable { mutableStateOf(false) }
+    val oldName = rememberSaveable { mutableStateOf("") }
+    val newName = rememberSaveable { mutableStateOf("") }
+    if(showRenameDialog.value) {
+        ConfirmDialog2(
+            okBtnEnabled = newName.value.isNotBlank(),
+            title = stringResource(R.string.rename),
+            requireShowTextCompose = true,
+            textCompose = {
+                ScrollableColumn {
+                    MySelectionContainer {
+                        Row {
+                            Text(text = stringResource(id = R.string.remote)+": ")
+                            Text(text = curObjInState.value.remoteName,
+                                fontWeight = FontWeight.ExtraBold,
+                                overflow = TextOverflow.Visible
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(15.dp))
+                    TextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = newName.value,
+                        singleLine = true,
+                        onValueChange = {
+                            newName.value = it
+                        },
+                        label = { Text(stringResource(R.string.new_name)) }
+                    )
+                }
+            },
+            onCancel = { showRenameDialog.value = false }
+        ) onOK@{
+            showRenameDialog.value = false
+            val newName = newName.value.trim()
+            val oldName = oldName.value
+            renameFailedRefs.value = ""
+
+            if(newName == oldName) {
+                return@onOK
+            }
+
+            doJobThenOffLoading(loadingOn, loadingOff, activityContext.getString(R.string.loading)) {
+                try {
+                    Repository.open(curRepo.value.fullSavePath).use { repo->
+                        val problems = Remote.rename(repo, oldName, newName)
+                        if(problems.isNotEmpty()) {
+                            renameFailedRefs.value = "Below refs rename failed, you need to edit config by yourself:\n\n${problems.joinToString("\n\n")}\n"
+                            showRenameFailedRefsDialog.value = true
+                        }else { //成功
+                            Msg.requireShow(activityContext.getString(R.string.success))
+                        }
+                    }
+
+                }catch (e: Exception) {
+                    val actionDesc = "rename remote"
+                    val errMsgPrefix = "$actionDesc err: remoteName='$oldName', newName='$newName' err="
+                    Msg.requireShowLongDuration(e.localizedMessage ?: errMsgPrefix)
+                    createAndInsertError(curRepo.value.id, errMsgPrefix + e.localizedMessage)
+                    MyLog.e(TAG, "$errMsgPrefix${e.stackTraceToString()}")
+                }finally {
+                    changeStateTriggerRefreshPage(needRefresh)
+                }
+            }
+        }
+    }
+
+
+    val showDelRemoteDialog = rememberSaveable { mutableStateOf(false) }
     if(showDelRemoteDialog.value) {
         val remoteWillDel = curObjInState.value
         val remoteNameWillDel = remoteWillDel.remoteName
@@ -236,7 +326,6 @@ fun RemoteListScreen(
 
     val showViewDialog = rememberSaveable { mutableStateOf(false)}
     val viewDialogText = rememberSaveable { mutableStateOf("")}
-    val clipboardManager = LocalClipboardManager.current
     if(showViewDialog.value) {
         CopyableDialog(
             title = stringResource(id = R.string.remote_info),
@@ -823,6 +912,12 @@ fun RemoteListScreen(
                         //跳转到凭据列表页面
                         //curObjInState当初应命名为“LongPressedItem”之类的名字，现在这我经常分不清哪个状态变量存储长按条目
                         navController.navigate(Cons.nav_CredentialManagerScreen+"/${curObjInState.value.remoteId}")
+                    }
+
+                    BottomSheetItem(sheetState=sheetState, showBottomSheet=showBottomSheet, text=stringResource(R.string.rename)){
+                        oldName.value = curObjInState.value.remoteName
+                        newName.value = ""
+                        showRenameDialog.value = true
                     }
                 }
 
